@@ -16,7 +16,7 @@ const detailKERMA = [];
 const kerma = {
   login: async () => {
     const parser = new Parser();
-    const browser = await pptr.launch({headless: false});
+    const browser = await pptr.launch({headless: true});
     const page = await browser.newPage();
     await page.setUserAgent(
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
@@ -48,11 +48,15 @@ const kerma = {
       });
 
     await page.waitForSelector("td");
-    await page.goto("https://laporankerma.kemdikbud.go.id/kerma/kerma");
+    await page.goto("https://laporankerma.kemdikbud.go.id/kerma/kerma").then(async ()=> {
+      await page.select("#dataTable_length > label > select", "100");
+    });
 
     await page.waitForSelector("td");
 
-    for (let i = 0; i <= 10; i++) {
+    for (let i = 0; i <= 2; i++) {
+      console.log("Mengambil ID page :" + (i + 1));
+      await page.select("#dataTable_length > label > select", "100");
       const html = await page.evaluate(() => {
         return document.documentElement.innerHTML;
       });
@@ -61,17 +65,17 @@ const kerma = {
 
       $("tbody tr button.btn-edit ").each(function (i, elem) {
         kermaID[index] = $(this).attr("onclick");
-        console.log(kermaID[index]);
+        // console.log(kermaID[index]);
         index++;
       });
 
       await page.click("#dataTable_next > a").then(async () => {
-        await delay(5000);
+        await delay(11000);
       });
       
     }
     
-    console.log(kermaID);
+    // console.log(kermaID);
 
     newID = kermaID.map((item) => {
       return item.split("'")[1];
@@ -91,7 +95,8 @@ const kerma = {
       anggaran,
       sumber_pendanaan,
       dibuat,
-      diubah
+      diubah,
+      link
     ) {
       var obj = {};
       obj.no_dokumen = no_dokumen;
@@ -106,6 +111,7 @@ const kerma = {
       obj.sumber_pendanaan = sumber_pendanaan;
       obj.dibuat = dibuat;
       obj.diubah = diubah;
+      obj.link = link;
       return obj;
     }
 
@@ -152,10 +158,16 @@ const kerma = {
       function dibuat() {
         var dibuat;
 
+       try {
         dibuat = $(
           "#kermaForm > div.col-sm-12.col-md-12.col-lg-12 > div > div > div.ibox-footer > div > div > div.pull-left"
         ).html();
         dibuat = dibuat.replace("<b>dibuat: </b>", "");
+       } catch (error) {
+          dibuat = "";
+          console.log(error);
+        
+       }
 
         return dibuat;
       }
@@ -183,7 +195,8 @@ const kerma = {
         anggaran(),
         sumber_pendanaan(),
         dibuat(),
-        diubah()
+        diubah(),
+        "https://laporankerma.kemdikbud.go.id/kerma/kerma/form/" + newID[n]
       );
 
       detailKERMA.push(test);
